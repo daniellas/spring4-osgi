@@ -5,7 +5,7 @@
         <artifactId>spring4-osgi</artifactId>
         <groupId>org.springframework.osgi</groupId>
         <version>1.0.0-SNAPSHOT</version>
-        <relativePath>../spring-osgi/pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>spring4-osgi-mock</artifactId>
@@ -20,6 +20,44 @@
         <spring.osgi.symbolic.name>${symName.prefix}.mock</spring.osgi.symbolic.name>
     </properties>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <configuration>
+                    <instructions>
+                        <!-- bundle specific conf -->
+                        <Bundle-Name>${project.artifactId}</Bundle-Name>
+                        <Bundle-SymbolicName>${spring.osgi.symbolic.name}</Bundle-SymbolicName>
+                        <Bundle-Vendor>SpringSource</Bundle-Vendor>
+                        <Export-Package>
+                            org.springframework.osgi.mock
+                        </Export-Package>
+                        <Import-Package>
+                            *
+                        </Import-Package>
+                        <Private-Package>
+                            org.springframework.osgi.mock
+                        </Private-Package>
+                        <!-- <Include-Resource>${spring.osgi.include.res}</Include-Resource> -->
+                        <!-- jar entries -->
+                        <Implementation-Title>Spring Dynamic Modules Framework</Implementation-Title>
+                        <Implementation-Version>${project.version}</Implementation-Version>
+                        <Implementation-Vendor>SpringSource</Implementation-Vendor>
+                        <Implementation-Vendor-Id>org.springframework.osgi</Implementation-Vendor-Id>
+                        <!-- Spring specific entries -->
+                        <Spring-DM-Version>${project.version}</Spring-DM-Version>
+                        <Spring-Version>${spring.maven.artifact.version}</Spring-Version>
+                        <!-- build version properties -->
+                        <Build-Plan>${env.buildPlan}</Build-Plan>
+                        <Build-Number>${env.buildNumber}</Build-Number>
+                        <SVN-Revision>${env.svnRevision}</SVN-Revision>
+                    </instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <dependencies>
         <!-- OSGI -->
         <dependency>

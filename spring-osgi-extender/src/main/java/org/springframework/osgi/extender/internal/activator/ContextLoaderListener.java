@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -329,7 +330,7 @@ public class ContextLoaderListener implements BundleActivator {
 
 	/** Required by the BundleActivator contract */
 	public ContextLoaderListener() {
-		this.managedContexts = CollectionFactory.createConcurrentMap(16);
+		this.managedContexts = new ConcurrentHashMap(16);
 	}
 
 	/**

@@ -24,6 +24,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -53,169 +54,164 @@ import org.xml.sax.SAXException;
  */
 public class NamespacePlugins implements NamespaceHandlerResolver, EntityResolver, DisposableBean {
 
-	/**
-	 * Wrapper class which implements both {@link EntityResolver} and
-	 * {@link NamespaceHandlerResolver} interfaces.
-	 * 
-	 * Simply delegates to the actual implementation discovered in a specific
-	 * bundle.
-	 */
-	private static class Plugin implements NamespaceHandlerResolver, EntityResolver {
+    /**
+     * Wrapper class which implements both {@link EntityResolver} and
+     * {@link NamespaceHandlerResolver} interfaces.
+     * 
+     * Simply delegates to the actual implementation discovered in a specific
+     * bundle.
+     */
+    private static class Plugin implements NamespaceHandlerResolver, EntityResolver {
 
-		private final NamespaceHandlerResolver namespace;
+        private final NamespaceHandlerResolver namespace;
 
-		private final EntityResolver entity;
+        private final EntityResolver entity;
 
-		private final Bundle bundle;
+        private final Bundle bundle;
 
+        private Plugin(Bundle bundle) {
+            this.bundle = bundle;
 
-		private Plugin(Bundle bundle) {
-			this.bundle = bundle;
+            ClassLoader loader = BundleDelegatingClassLoader.createBundleClassLoaderFor(bundle);
 
-			ClassLoader loader = BundleDelegatingClassLoader.createBundleClassLoaderFor(bundle);
+            entity = new DelegatingEntityResolver(loader);
+            namespace = new DefaultNamespaceHandlerResolver(loader);
+        }
 
-			entity = new DelegatingEntityResolver(loader);
-			namespace = new DefaultNamespaceHandlerResolver(loader);
-		}
+        public NamespaceHandler resolve(String namespaceUri) {
+            return namespace.resolve(namespaceUri);
+        }
 
-		public NamespaceHandler resolve(String namespaceUri) {
-			return namespace.resolve(namespaceUri);
-		}
+        public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+            return entity.resolveEntity(publicId, systemId);
+        }
 
-		public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-			return entity.resolveEntity(publicId, systemId);
-		}
+        public Bundle getBundle() {
+            return bundle;
+        }
+    }
 
-		public Bundle getBundle() {
-			return bundle;
-		}
-	}
+    private static final Log log = LogFactory.getLog(NamespacePlugins.class);
 
+    private final Map plugins = new ConcurrentHashMap(5);
 
-	private static final Log log = LogFactory.getLog(NamespacePlugins.class);
+    public void addHandler(Bundle bundle) {
+        if (log.isDebugEnabled())
+            log.debug("Adding as handler " + OsgiStringUtils.nullSafeNameAndSymName(bundle));
 
-	private final Map plugins = CollectionFactory.createConcurrentMap(5);
+        plugins.put(bundle, new Plugin(bundle));
+    }
 
+    /**
+     * Return true if a handler mapping was removed for the given bundle.
+     * 
+     * @param bundle
+     *            bundle to look at
+     * @return true if the bundle was used in the plugin map
+     */
+    public boolean removeHandler(Bundle bundle) {
+        if (log.isDebugEnabled())
+            log.debug("Removing handler " + OsgiStringUtils.nullSafeNameAndSymName(bundle));
 
-	public void addHandler(Bundle bundle) {
-		if (log.isDebugEnabled())
-			log.debug("Adding as handler " + OsgiStringUtils.nullSafeNameAndSymName(bundle));
+        return (plugins.remove(bundle) != null);
+    }
 
-		plugins.put(bundle, new Plugin(bundle));
-	}
+    public NamespaceHandler resolve(final String namespaceUri) {
+        if (System.getSecurityManager() != null) {
+            return (NamespaceHandler) AccessController.doPrivileged(new PrivilegedAction() {
 
-	/**
-	 * Return true if a handler mapping was removed for the given bundle.
-	 * 
-	 * @param bundle bundle to look at
-	 * @return true if the bundle was used in the plugin map
-	 */
-	public boolean removeHandler(Bundle bundle) {
-		if (log.isDebugEnabled())
-			log.debug("Removing handler " + OsgiStringUtils.nullSafeNameAndSymName(bundle));
+                public Object run() {
+                    return doResolve(namespaceUri);
+                }
+            });
 
-		return (plugins.remove(bundle) != null);
-	}
+        }
+        else {
+            return doResolve(namespaceUri);
+        }
+    }
 
-	public NamespaceHandler resolve(final String namespaceUri) {
-		if (System.getSecurityManager() != null) {
-			return (NamespaceHandler) AccessController.doPrivileged(new PrivilegedAction() {
+    public InputSource resolveEntity(final String publicId, final String systemId) throws SAXException, IOException {
+        if (System.getSecurityManager() != null) {
+            try {
+                return (InputSource) AccessController.doPrivileged(new PrivilegedExceptionAction() {
 
-				public Object run() {
-					return doResolve(namespaceUri);
-				}
-			});
+                    public Object run() throws Exception {
+                        return doResolveEntity(publicId, systemId);
+                    }
+                });
+            } catch (PrivilegedActionException pae) {
+                Exception cause = pae.getException();
+                if (cause instanceof IOException) {
+                    throw (IOException) cause;
+                }
+                else
+                    throw (SAXException) cause;
+            }
+        }
+        else {
+            return doResolveEntity(publicId, systemId);
+        }
+    }
 
-		}
-		else {
-			return doResolve(namespaceUri);
-		}
-	}
+    private NamespaceHandler doResolve(String namespaceUri) {
+        boolean debug = log.isDebugEnabled();
 
-	public InputSource resolveEntity(final String publicId, final String systemId) throws SAXException, IOException {
-		if (System.getSecurityManager() != null) {
-			try {
-				return (InputSource) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+        if (debug)
+            log.debug("Trying to resolving namespace handler for " + namespaceUri);
 
-					public Object run() throws Exception {
-						return doResolveEntity(publicId, systemId);
-					}
-				});
-			}
-			catch (PrivilegedActionException pae) {
-				Exception cause = pae.getException();
-				if (cause instanceof IOException) {
-					throw (IOException) cause;
-				}
-				else
-					throw (SAXException) cause;
-			}
-		}
-		else {
-			return doResolveEntity(publicId, systemId);
-		}
-	}
+        for (Iterator i = plugins.values().iterator(); i.hasNext();) {
+            Plugin plugin = (Plugin) i.next();
+            try {
+                NamespaceHandler handler = plugin.resolve(namespaceUri);
+                if (handler != null) {
+                    if (debug)
+                        log.debug("Namespace handler for " + namespaceUri + " found inside "
+                                + OsgiStringUtils.nullSafeNameAndSymName(plugin.getBundle()));
 
-	private NamespaceHandler doResolve(String namespaceUri) {
-		boolean debug = log.isDebugEnabled();
+                    return handler;
+                }
+            } catch (IllegalArgumentException ex) {
+                if (debug)
+                    log.debug("Namespace handler for " + namespaceUri + " not found inside "
+                            + OsgiStringUtils.nullSafeNameAndSymName(plugin.getBundle()));
 
-		if (debug)
-			log.debug("Trying to resolving namespace handler for " + namespaceUri);
+            }
+        }
+        return null;
+    }
 
-		for (Iterator i = plugins.values().iterator(); i.hasNext();) {
-			Plugin plugin = (Plugin) i.next();
-			try {
-				NamespaceHandler handler = plugin.resolve(namespaceUri);
-				if (handler != null) {
-					if (debug)
-						log.debug("Namespace handler for " + namespaceUri + " found inside "
-								+ OsgiStringUtils.nullSafeNameAndSymName(plugin.getBundle()));
+    private InputSource doResolveEntity(String publicId, String systemId) throws SAXException, IOException {
+        boolean debug = log.isDebugEnabled();
 
-					return handler;
-				}
-			}
-			catch (IllegalArgumentException ex) {
-				if (debug)
-					log.debug("Namespace handler for " + namespaceUri + " not found inside "
-							+ OsgiStringUtils.nullSafeNameAndSymName(plugin.getBundle()));
+        if (debug)
+            log.debug("Trying to resolving entity for " + publicId + "|" + systemId);
 
-			}
-		}
-		return null;
-	}
+        if (systemId != null) {
+            for (Iterator i = plugins.values().iterator(); i.hasNext();) {
+                InputSource inputSource;
+                Plugin plugin = (Plugin) i.next();
+                try {
+                    inputSource = plugin.resolveEntity(publicId, systemId);
+                    if (inputSource != null) {
+                        if (debug)
+                            log.debug("XML schema for " + publicId + "|" + systemId + " found inside "
+                                    + OsgiStringUtils.nullSafeNameAndSymName(plugin.getBundle()));
+                        return inputSource;
+                    }
 
-	private InputSource doResolveEntity(String publicId, String systemId) throws SAXException, IOException {
-		boolean debug = log.isDebugEnabled();
+                } catch (FileNotFoundException ex) {
+                    if (debug)
+                        log.debug("XML schema for " + publicId + "|" + systemId + " not found inside "
+                                + OsgiStringUtils.nullSafeNameAndSymName(plugin.getBundle()), ex);
+                }
+            }
+        }
 
-		if (debug)
-			log.debug("Trying to resolving entity for " + publicId + "|" + systemId);
+        return null;
+    }
 
-		if (systemId != null) {
-			for (Iterator i = plugins.values().iterator(); i.hasNext();) {
-				InputSource inputSource;
-				Plugin plugin = (Plugin) i.next();
-				try {
-					inputSource = plugin.resolveEntity(publicId, systemId);
-					if (inputSource != null) {
-						if (debug)
-							log.debug("XML schema for " + publicId + "|" + systemId + " found inside "
-									+ OsgiStringUtils.nullSafeNameAndSymName(plugin.getBundle()));
-						return inputSource;
-					}
-
-				}
-				catch (FileNotFoundException ex) {
-					if (debug)
-						log.debug("XML schema for " + publicId + "|" + systemId + " not found inside "
-								+ OsgiStringUtils.nullSafeNameAndSymName(plugin.getBundle()), ex);
-				}
-			}
-		}
-
-		return null;
-	}
-
-	public void destroy() {
-		plugins.clear();
-	}
+    public void destroy() {
+        plugins.clear();
+    }
 }

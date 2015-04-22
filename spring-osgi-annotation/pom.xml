@@ -5,10 +5,10 @@
         <artifactId>spring4-osgi</artifactId>
         <groupId>org.springframework.osgi</groupId>
         <version>1.0.0-SNAPSHOT</version>
-        <relativePath>../spring-osgi/pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>spring-osgi-annotation</artifactId>
+    <artifactId>spring4-osgi-annotation</artifactId>
     <packaging>bundle</packaging>
     <name>Spring OSGi Annotations</name>
     <url>http://www.springframework.org/osgi</url>
@@ -18,28 +18,24 @@
         <javadoc.loc>${basedir}/../docs/src/javadoc</javadoc.loc>
         <spring.osgi.export.pkg>org.springframework.osgi.extensions.annotation</spring.osgi.export.pkg>
         <spring.osgi.symbolic.name>${symName.prefix}.extensions.annotations</spring.osgi.symbolic.name>
-        <spring.osgi.import.pkg>
-            org.apache.commons.logging
-        </spring.osgi.import.pkg>
-
-        <source-jdk>1.5</source-jdk>
+        <spring.osgi.import.pkg>org.apache.commons.logging</spring.osgi.import.pkg>
     </properties>
 
     <dependencies>
         <!-- OSGI -->
         <dependency>
             <groupId>org.springframework.osgi</groupId>
-            <artifactId>spring-osgi-mock</artifactId>
+            <artifactId>spring4-osgi-mock</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.osgi</groupId>
-            <artifactId>spring-osgi-core</artifactId>
+            <artifactId>spring4-osgi-core</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.osgi</groupId>
-            <artifactId>spring-osgi-extender</artifactId>
+            <artifactId>spring4-osgi-extender</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>

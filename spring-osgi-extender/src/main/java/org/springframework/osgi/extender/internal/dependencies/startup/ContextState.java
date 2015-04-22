@@ -15,7 +15,6 @@
  */
 package org.springframework.osgi.extender.internal.dependencies.startup;
 
-import org.springframework.core.enums.StaticLabeledEnum;
 
 /**
  * State of an application context while being processed by
@@ -28,80 +27,102 @@ import org.springframework.core.enums.StaticLabeledEnum;
  * @author Costin Leau
  * 
  */
-public class ContextState extends StaticLabeledEnum {
+public enum ContextState {
 
-	private static final long serialVersionUID = 5799223470478297089L;
+    /**
+     * Application context has been initialized but not started (i.e. refresh
+     * hasn't been called).
+     */
+    INITIALIZED(0, "initialized"),
 
-	/**
-	 * Application context has been initialized but not started (i.e. refresh
-	 * hasn't been called).
-	 */
-	public static final ContextState INITIALIZED = new ContextState(0, "initialized");
+    /**
+     * Application context has been started but the OSGi service dependencies
+     * haven't been yet resolved.
+     */
+    RESOLVING_DEPENDENCIES(1, "resolving-dependencies"),
 
-	/**
-	 * Application context has been started but the OSGi service dependencies
-	 * haven't been yet resolved.
-	 */
-	public static final ContextState RESOLVING_DEPENDENCIES = new ContextState(1, "resolving-dependencies");
+    /**
+     * Application context has been started and the OSGi dependencies have been
+     * resolved. However the context is not fully initialized (i.e. refresh
+     * hasn't been completed).
+     */
+    DEPENDENCIES_RESOLVED(2, "dependencies-resolved"),
 
-	/**
-	 * Application context has been started and the OSGi dependencies have been
-	 * resolved. However the context is not fully initialized (i.e. refresh
-	 * hasn't been completed).
-	 */
-	public static final ContextState DEPENDENCIES_RESOLVED = new ContextState(2, "dependencies-resolved");
+    /**
+     * Application context has been fully initialized. The OSGi dependencies
+     * have been resolved and refresh has fully completed.
+     */
+    STARTED(3, "started"),
 
-	/**
-	 * Application context has been fully initialized. The OSGi dependencies
-	 * have been resolved and refresh has fully completed.
-	 */
-	public static final ContextState STARTED = new ContextState(3, "started");
+    /**
+     * Application context has been interruped. This state occurs if the context
+     * is being closed before being fully started.
+     */
+    INTERRUPTED(4, "interrupted"),
 
-	/**
-	 * Application context has been interruped. This state occurs if the context
-	 * is being closed before being fully started.
-	 */
-	public static final ContextState INTERRUPTED = new ContextState(4, "interrupted");
+    /**
+     * Application context has been stopped. This can occur even only if the
+     * context has been fully started for example; otherwise
+     * {@link #INTERRUPTED} state should be used.
+     */
+    STOPPED(5, "stopped");
 
-	/**
-	 * Application context has been stopped. This can occur even only if the
-	 * context has been fully started for example; otherwise
-	 * {@link #INTERRUPTED} state should be used.
-	 */
-	public static final ContextState STOPPED = new ContextState(5, "stopped");
+    /**
+     * Constructs a new <code>ContextState</code> instance.
+     * 
+     * @param value
+     * @param name
+     */
+    private ContextState(int value, String label) {
+        this.code = new Short((short) code);
+        if (label != null) {
+            this.label = label;
+        }
+        else {
+            this.label = this.code.toString();
+        }
+    }
 
-	/**
-	 * Constructs a new <code>ContextState</code> instance.
-	 * 
-	 * @param value
-	 * @param name
-	 */
-	private ContextState(int value, String name) {
-		super(value, name);
-	}
+    public Comparable<?> getCode() {
+        return code;
+    }
 
-	/**
-	 * Indicates whether the state is 'down' or not - that is a context which
-	 * has been either closed or stopped.
-	 * 
-	 * @return true if the context has been interrupted or stopped, false
-	 * otherwise.
-	 */
-	public boolean isDown() {
-		return (this == INTERRUPTED || this == STOPPED);
-	}
+    public String getLabel() {
+        return label;
+    }
 
-	/**
-	 * Indicates whether the state is unresolved or not. An unresolved state
-	 * means a state which is active (started) in RESOLVING_DEPENDENCIES state.
-	 * 
-	 * @return
-	 */
-	public boolean isUnresolved() {
-		return (this == RESOLVING_DEPENDENCIES || this == INITIALIZED);
-	}
+    /**
+     * The unique code of the enum.
+     */
+    private Short code = 0;
 
-	public boolean isResolved() {
-		return !isUnresolved();
-	}
+    /**
+     * A descriptive label for the enum.
+     */
+    private final transient String label;
+
+    /**
+     * Indicates whether the state is 'down' or not - that is a context which
+     * has been either closed or stopped.
+     * 
+     * @return true if the context has been interrupted or stopped, false
+     *         otherwise.
+     */
+    public boolean isDown() {
+        return (this == INTERRUPTED || this == STOPPED);
+    }
+
+    /**
+     * Indicates whether the state is unresolved or not. An unresolved state
+     * means a state which is active (started) in RESOLVING_DEPENDENCIES state.
+     * 
+     * @return
+     */
+    public boolean isUnresolved() {
+        return (this == RESOLVING_DEPENDENCIES || this == INITIALIZED);
+    }
+
+    public boolean isResolved() {
+        return !isUnresolved();
+    }
 }
