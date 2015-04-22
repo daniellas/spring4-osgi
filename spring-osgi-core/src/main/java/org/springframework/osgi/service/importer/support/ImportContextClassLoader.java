@@ -16,7 +16,6 @@
 
 package org.springframework.osgi.service.importer.support;
 
-import org.springframework.core.enums.StaticLabeledEnum;
 
 /**
  * Enum-like class containing the OSGi service importer thread context class
@@ -24,24 +23,23 @@ import org.springframework.core.enums.StaticLabeledEnum;
  * 
  * @author Costin Leau
  */
-public class ImportContextClassLoader extends StaticLabeledEnum {
+public enum ImportContextClassLoader {
 
-	private static final long serialVersionUID = -7054525261814306077L;
 
 	/**
 	 * The TCCL will not be managed upon service invocation.
 	 */
-	public static final ImportContextClassLoader UNMANAGED = new ImportContextClassLoader(0, "UNMANAGED");
+	UNMANAGED(0, "UNMANAGED"),
 
 	/**
 	 * The TCCL will be set to the service provider upon service invocation.
 	 */
-	public static final ImportContextClassLoader SERVICE_PROVIDER = new ImportContextClassLoader(1, "SERVICE_PROVIDER");
+	SERVICE_PROVIDER(1, "SERVICE_PROVIDER"),
 
 	/**
 	 * The TCCL will be set to the service provider upon service invocation.
 	 */
-	public static final ImportContextClassLoader CLIENT = new ImportContextClassLoader(2, "CLIENT");
+	CLIENT(2, "CLIENT");
 
 
 	/**
@@ -50,8 +48,32 @@ public class ImportContextClassLoader extends StaticLabeledEnum {
 	 * @param code
 	 * @param label
 	 */
-	private ImportContextClassLoader(int code, String label) {
-		super(code, label);
-	}
+    private ImportContextClassLoader(int code, String label) {
+        this.code = new Short((short) code);
+        if (label != null) {
+            this.label = label;
+        }
+        else {
+            this.label = this.code.toString();
+        }
+    }
+
+    public Comparable<?> getCode() {
+        return code;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * The unique code of the enum.
+     */
+    private final Short code;
+
+    /**
+     * A descriptive label for the enum.
+     */
+    private final transient String label;
 
 }

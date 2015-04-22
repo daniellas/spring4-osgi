@@ -16,7 +16,6 @@
 
 package org.springframework.osgi.bundle;
 
-import java.io.Serializable;
 
 /**
  * Enum-like class for the {@link org.osgi.framework.Bundle} actions supported
@@ -25,19 +24,8 @@ import java.io.Serializable;
  * @author Costin Leau
  * 
  */
-public class BundleAction implements Serializable {
+public enum BundleAction {
 
-    private static final long serialVersionUID = 3723986124669884703L;
-
-    /**
-     * The unique code of the enum.
-     */
-    private int code = 0;
-
-    /**
-     * A descriptive label for the enum.
-     */
-    private final transient String label;
 
     /**
      * Install bundle. This action is implied by {@link #START} and
@@ -46,7 +34,7 @@ public class BundleAction implements Serializable {
      * 
      * @see org.osgi.framework.BundleContext#installBundle(String)
      */
-    public static final BundleAction INSTALL = new BundleAction(1, "install");
+    INSTALL(1, "install"),
 
     /**
      * Start bundle. If no bundle is found, it will try first to install one
@@ -54,7 +42,7 @@ public class BundleAction implements Serializable {
      * 
      * @see org.osgi.framework.Bundle#start()
      */
-    public static final BundleAction START = new BundleAction(2, "start");
+    START(2, "start"),
 
     /**
      * Update bundle. If no bundle is found, it will try first to install one
@@ -62,7 +50,7 @@ public class BundleAction implements Serializable {
      * 
      * @see org.osgi.framework.Bundle#update()
      */
-    public static final BundleAction UPDATE = new BundleAction(3, "update");
+    UPDATE(3, "update"),
 
     /**
      * Stop bundle. If no bundle is found, this action does nothing (it will
@@ -70,7 +58,7 @@ public class BundleAction implements Serializable {
      * 
      * @see org.osgi.framework.Bundle#stop()
      */
-    public static final BundleAction STOP = new BundleAction(4, "stop");
+    STOP(4, "stop"),
 
     /**
      * Uninstall bundle. If no bundle is found, this action does nothing (it
@@ -78,7 +66,7 @@ public class BundleAction implements Serializable {
      * 
      * @see org.osgi.framework.Bundle#uninstall()
      */
-    public static final BundleAction UNINSTALL = new BundleAction(5, "uninstall");
+    UNINSTALL(5, "uninstall");
 
     /**
      * Constructs a new <code>BundleAction</code> instance.
@@ -87,8 +75,13 @@ public class BundleAction implements Serializable {
      * @param label
      */
     private BundleAction(int code, String label) {
-        this.code = code;
-        this.label = label;
+        this.code = new Short((short) code);
+        if (label != null) {
+            this.label = label;
+        }
+        else {
+            this.label = this.code.toString();
+        }
     }
 
     public Comparable<?> getCode() {
@@ -98,4 +91,14 @@ public class BundleAction implements Serializable {
     public String getLabel() {
         return label;
     }
+
+    /**
+     * The unique code of the enum.
+     */
+    private Short code = 0;
+
+    /**
+     * A descriptive label for the enum.
+     */
+    private final transient String label;
 }

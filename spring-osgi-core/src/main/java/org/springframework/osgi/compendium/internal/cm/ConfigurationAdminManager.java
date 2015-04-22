@@ -130,7 +130,7 @@ class ConfigurationAdminManager implements DisposableBean {
 		if (log.isTraceEnabled())
 			log.trace("Initial properties for pid [" + pid + "] are " + properties);
 
-		Properties props = new Properties();
+		Dictionary props = new Properties();
 		props.put(Constants.SERVICE_PID, pid);
 		Bundle bundle = bundleContext.getBundle();
 		props.put(Constants.BUNDLE_SYMBOLICNAME, OsgiStringUtils.nullSafeSymbolicName(bundle));

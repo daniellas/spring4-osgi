@@ -31,16 +31,15 @@ import org.springframework.core.JdkVersion;
  */
 public abstract class MethodUtils {
 
-	private static final int BRIDGE = 0x00000040;
+    private static final int BRIDGE = 0x00000040;
 
-	/** flag used for skipping bridged methods */
-	private static final boolean isJDK5 = JdkVersion.isAtLeastJava15();
+    /** flag used for skipping bridged methods */
+    private static final boolean isJDK5 = JdkVersion.getMajorJavaVersion() >= JdkVersion.JAVA_15;
 
-
-	public static boolean isBridge(Method method) {
-		if (isJDK5) {
-			return (method.getModifiers() & BRIDGE) != 0;
-		}
-		return false;
-	}
+    public static boolean isBridge(Method method) {
+        if (isJDK5) {
+            return (method.getModifiers() & BRIDGE) != 0;
+        }
+        return false;
+    }
 }

@@ -45,77 +45,93 @@ import org.springframework.util.ObjectUtils;
  */
 public abstract class ClassUtils {
 
-    private static class ReadOnlySetFromMap implements Set {
+    private static class ReadOnlySetFromMap implements Set<ClassLoader> {
 
-        private final Set keys;
+        private final Set<ClassLoader> keys;
 
-        public ReadOnlySetFromMap(Map lookupMap) {
+        public ReadOnlySetFromMap(Map<ClassLoader, Boolean> lookupMap) {
             keys = lookupMap.keySet();
         }
 
-        public boolean add(Object o) {
+        @Override
+        public boolean add(ClassLoader o) {
             throw new UnsupportedOperationException();
         }
 
-        public boolean addAll(Collection c) {
+        @Override
+        public boolean addAll(Collection<? extends ClassLoader> c) {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void clear() {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public boolean contains(Object o) {
             return keys.contains(o);
         }
 
-        public boolean containsAll(Collection c) {
+        @Override
+        public boolean containsAll(Collection<?> c) {
             return keys.containsAll(c);
         }
 
+        @Override
         public boolean isEmpty() {
             return keys.isEmpty();
         }
 
-        public Iterator iterator() {
+        @Override
+        public Iterator<ClassLoader> iterator() {
             return keys.iterator();
         }
 
+        @Override
         public boolean remove(Object o) {
             throw new UnsupportedOperationException();
         }
 
-        public boolean removeAll(Collection c) {
+        public boolean removeAll(Collection<?> c) {
             throw new UnsupportedOperationException();
         }
 
-        public boolean retainAll(Collection c) {
+        @Override
+        public boolean retainAll(Collection<?> c) {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public int size() {
             return keys.size();
         }
 
+        @Override
         public Object[] toArray() {
             return keys.toArray();
         }
 
-        public Object[] toArray(Object[] array) {
+        @Override
+        public <T> T[] toArray(T[] array) {
             return keys.toArray(array);
         }
 
+        @Override
         public String toString() {
             return keys.toString();
         }
 
+        @Override
         public int hashCode() {
             return keys.hashCode();
         }
 
+        @Override
         public boolean equals(Object o) {
             return o == this || keys.equals(o);
         }
+
     }
 
     /**
@@ -145,13 +161,13 @@ public abstract class ClassUtils {
      * List of special class loaders, outside OSGi, that might be used by the
      * user through boot delegation. read-only.
      */
-    public static final List knownNonOsgiLoaders;
+    public static final List<ClassLoader> knownNonOsgiLoaders;
 
     /**
      * Set of special class loaders, outside OSGi, that might be used by the
      * user through boot delegation. read-only.
      */
-    public static final Set knownNonOsgiLoadersSet;
+    public static final Set<ClassLoader> knownNonOsgiLoadersSet;
 
     // add the known, non-OSGi class loaders
     // note that the order is important
@@ -162,10 +178,11 @@ public abstract class ClassUtils {
         // where (*) represents some optional loaders for cases where the
         // framework is embedded
 
-        final Map<?, ?> lookupMap = Collections.synchronizedMap(CollectionFactory.createApproximateMap(Map.class, 8));
-        final List<Object> lookupList = Collections.synchronizedList(new ArrayList<Object>());
+        Map<ClassLoader, Boolean> createMap = CollectionFactory.createMap(Map.class, 8);
+        final Map<ClassLoader, Boolean> lookupMap = Collections.synchronizedMap(createMap);
+        final List<ClassLoader> lookupList = Collections.synchronizedList(new ArrayList<ClassLoader>());
 
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
 
             public Object run() {
 
@@ -187,9 +204,8 @@ public abstract class ClassUtils {
     }
 
     public static ClassLoader getFwkClassLoader() {
-        return (ClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-
-            public Object run() {
+        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            public ClassLoader run() {
                 return Bundle.class.getClassLoader();
             }
         });
@@ -201,7 +217,8 @@ public abstract class ClassUtils {
      * @param classLoader
      *            non OSGi class loader
      */
-    private static void addNonOsgiClassLoader(ClassLoader classLoader, List list, Map map) {
+    private static void addNonOsgiClassLoader(ClassLoader classLoader, List<ClassLoader> list,
+            Map<ClassLoader, Boolean> map) {
         while (classLoader != null) {
             synchronized (list) {
                 if (!map.containsKey(classLoader)) {
@@ -238,7 +255,7 @@ public abstract class ClassUtils {
             this.bundle = null;
         }
 
-        public Class loadClass(String className) throws ClassNotFoundException {
+        public Class<?> loadClass(String className) throws ClassNotFoundException {
             return (bundle == null ? classLoader.loadClass(className) : bundle.loadClass(className));
         }
 
@@ -270,16 +287,16 @@ public abstract class ClassUtils {
      * 
      * @return array of classes extended or implemented by the given class
      */
-    public static Class[] getClassHierarchy(Class clazz, int mode) {
-        Class[] classes = null;
+    public static Class<?>[] getClassHierarchy(Class<?> clazz, int mode) {
+        Class<?>[] classes = null;
 
         if (clazz != null && isModeValid(mode)) {
 
-            Set composingClasses = new LinkedHashSet();
+            Set<Class<?>> composingClasses = new LinkedHashSet<Class<?>>();
             boolean includeClasses = includesMode(mode, INCLUDE_CLASS_HIERARCHY);
             boolean includeInterfaces = includesMode(mode, INCLUDE_INTERFACES);
 
-            Class clz = clazz;
+            Class<?> clz = clazz;
             do {
                 if (includeClasses) {
                     composingClasses.add(clz);
@@ -307,7 +324,7 @@ public abstract class ClassUtils {
      * @param loader
      * @return
      */
-    public static Class[] getVisibleClassHierarchy(Class clazz, int mode, ClassLoader loader) {
+    public static Class<?>[] getVisibleClassHierarchy(Class<?> clazz, int mode, ClassLoader loader) {
         if (clazz == null)
             return new Class[0];
 
@@ -326,7 +343,7 @@ public abstract class ClassUtils {
      *            bundle used for class visibility
      * @return array of visible classes part of the hierarchy
      */
-    public static Class[] getVisibleClassHierarchy(Class clazz, int mode, Bundle bundle) {
+    public static Class<?>[] getVisibleClassHierarchy(Class<?> clazz, int mode, Bundle bundle) {
         return getVisibleClasses(getClassHierarchy(clazz, mode), bundle);
     }
 
@@ -336,7 +353,7 @@ public abstract class ClassUtils {
      * 
      * @return
      */
-    public static Class[] getVisibleClasses(Class[] classes, ClassLoader classLoader) {
+    public static Class<?>[] getVisibleClasses(Class<?>[] classes, ClassLoader classLoader) {
         return getVisibleClasses(classes, new ClassLoaderBridge(classLoader));
     }
 
@@ -346,20 +363,20 @@ public abstract class ClassUtils {
      * 
      * @return
      */
-    public static Class[] getVisibleClasses(Class[] classes, Bundle bundle) {
+    public static Class<?>[] getVisibleClasses(Class<?>[] classes, Bundle bundle) {
         return getVisibleClasses(classes, new ClassLoaderBridge(bundle));
     }
 
-    private static Class[] getVisibleClasses(Class[] classes, ClassLoaderBridge loader) {
+    private static Class<?>[] getVisibleClasses(Class<?>[] classes, ClassLoaderBridge loader) {
         if (ObjectUtils.isEmpty(classes))
             return classes;
 
-        Set classSet = new LinkedHashSet(classes.length);
+        Set<Class<?>> classSet = new LinkedHashSet<Class<?>>(classes.length);
         CollectionUtils.mergeArrayIntoCollection(classes, classSet);
 
         // filter class collection based on visibility
-        for (Iterator iter = classSet.iterator(); iter.hasNext();) {
-            Class clzz = (Class) iter.next();
+        for (Iterator<Class<?>> iter = classSet.iterator(); iter.hasNext();) {
+            Class<?> clzz = iter.next();
             if (!loader.canSee(clzz.getName())) {
                 iter.remove();
             }
@@ -374,9 +391,9 @@ public abstract class ClassUtils {
      * @param clazz
      * @return all interfaces implemented by the given class.
      */
-    public static Class[] getAllInterfaces(Class clazz) {
+    public static Class<?>[] getAllInterfaces(Class<?> clazz) {
         Assert.notNull(clazz);
-        return getAllInterfaces(clazz, new LinkedHashSet(8));
+        return getAllInterfaces(clazz, new LinkedHashSet<Class<?>>());
     }
 
     /**
@@ -386,15 +403,15 @@ public abstract class ClassUtils {
      * @param interfaces
      * @return
      */
-    private static Class[] getAllInterfaces(Class clazz, Set interfaces) {
-        Class[] intfs = clazz.getInterfaces();
+    private static Class<?>[] getAllInterfaces(Class<?> clazz, Set<Class<?>> interfaces) {
+        Class<?>[] intfs = clazz.getInterfaces();
         CollectionUtils.mergeArrayIntoCollection(intfs, interfaces);
 
         for (int i = 0; i < intfs.length; i++) {
             getAllInterfaces(intfs[i], interfaces);
         }
 
-        return (Class[]) interfaces.toArray(new Class[interfaces.size()]);
+        return interfaces.toArray(new Class[interfaces.size()]);
     }
 
     /**
@@ -424,7 +441,7 @@ public abstract class ClassUtils {
      * @param clazz
      * @return
      */
-    public static ClassLoader getClassLoader(Class clazz) {
+    public static ClassLoader getClassLoader(Class<?> clazz) {
         Assert.notNull(clazz);
         ClassLoader loader = clazz.getClassLoader();
         return (loader == null ? ClassLoader.getSystemClassLoader() : loader);
@@ -457,7 +474,7 @@ public abstract class ClassUtils {
      * @param array
      * @return
      */
-    public static String[] toStringArray(Class[] array) {
+    public static String[] toStringArray(Class<?>[] array) {
         if (ObjectUtils.isEmpty(array))
             return new String[0];
 
@@ -477,7 +494,7 @@ public abstract class ClassUtils {
      * @return true if a ConcurrentHashMap is available on the classpath.
      */
     public static boolean concurrentLibAvailable() {
-        return (backportConcurrentAvailable || JdkVersion.getMajorJavaVersion());
+        return (backportConcurrentAvailable || JdkVersion.getMajorJavaVersion() >= JdkVersion.JAVA_16);
     }
 
     /**
@@ -489,11 +506,11 @@ public abstract class ClassUtils {
      * @return true if at least two classes unrelated to each other are found,
      *         false otherwise
      */
-    public static boolean containsUnrelatedClasses(Class[] classes) {
+    public static boolean containsUnrelatedClasses(Class<?>[] classes) {
         if (ObjectUtils.isEmpty(classes))
             return false;
 
-        Class clazz = null;
+        Class<?> clazz = null;
         // check if is more then one class specified
         for (int i = 0; i < classes.length; i++) {
             if (!classes[i].isInterface()) {
@@ -527,11 +544,11 @@ public abstract class ClassUtils {
      *            array of classes
      * @return a new array without superclasses
      */
-    public static Class[] removeParents(Class[] classes) {
+    public static Class<?>[] removeParents(Class<?>[] classes) {
         if (ObjectUtils.isEmpty(classes))
             return new Class[0];
 
-        List clazz = new ArrayList(classes.length);
+        List<Class<?>> clazz = new ArrayList<Class<?>>(classes.length);
         for (int i = 0; i < classes.length; i++) {
             clazz.add(classes[i]);
         }
@@ -548,10 +565,10 @@ public abstract class ClassUtils {
         do {
             dirty = false;
             for (int i = 0; i < clazz.size(); i++) {
-                Class currentClass = (Class) clazz.get(i);
+                Class<?> currentClass = clazz.get(i);
                 for (int j = 0; j < clazz.size(); j++) {
                     if (i != j) {
-                        if (currentClass.isAssignableFrom((Class) clazz.get(j))) {
+                        if (currentClass.isAssignableFrom(clazz.get(j))) {
                             clazz.remove(i);
                             i--;
                             dirty = true;
@@ -562,7 +579,7 @@ public abstract class ClassUtils {
             }
         } while (dirty);
 
-        return (Class[]) clazz.toArray(new Class[clazz.size()]);
+        return clazz.toArray(new Class[clazz.size()]);
     }
 
     /**
@@ -575,12 +592,12 @@ public abstract class ClassUtils {
      * @param factory
      * @param classes
      */
-    public static void configureFactoryForClass(ProxyFactory factory, Class[] classes) {
+    public static void configureFactoryForClass(ProxyFactory factory, Class<?>[] classes) {
         if (ObjectUtils.isEmpty(classes))
             return;
 
         for (int i = 0; i < classes.length; i++) {
-            Class clazz = classes[i];
+            Class<?> clazz = classes[i];
 
             if (clazz.isInterface()) {
                 factory.addInterface(clazz);
@@ -604,12 +621,12 @@ public abstract class ClassUtils {
      * @return an array of classes (can be smaller then the array of class
      *         names) w/o duplicates
      */
-    public static Class[] loadClasses(String[] classNames, ClassLoader classLoader) {
+    public static Class<?>[] loadClasses(String[] classNames, ClassLoader classLoader) {
         if (ObjectUtils.isEmpty(classNames))
             return new Class[0];
 
         Assert.notNull(classLoader, "classLoader is required");
-        Set classes = new LinkedHashSet(classNames.length);
+        Set<Class<?>> classes = new LinkedHashSet<Class<?>>(classNames.length);
 
         for (int i = 0; i < classNames.length; i++) {
             try {
@@ -619,7 +636,7 @@ public abstract class ClassUtils {
             }
         }
 
-        return (Class[]) classes.toArray(new Class[classes.size()]);
+        return classes.toArray(new Class[classes.size()]);
     }
 
     /**
@@ -634,17 +651,17 @@ public abstract class ClassUtils {
      * @return array of classes (w/o duplicates) which does not have the given
      *         modifier
      */
-    public static Class[] excludeClassesWithModifier(Class[] classes, int modifier) {
+    public static Class<?>[] excludeClassesWithModifier(Class<?>[] classes, int modifier) {
         if (ObjectUtils.isEmpty(classes))
             return new Class[0];
 
-        Set clazzes = new LinkedHashSet(classes.length);
+        Set<Class<?>> clazzes = new LinkedHashSet<Class<?>>(classes.length);
 
         for (int i = 0; i < classes.length; i++) {
             if ((modifier & classes[i].getModifiers()) == 0)
                 clazzes.add(classes[i]);
         }
-        return (Class[]) clazzes.toArray(new Class[clazzes.size()]);
+        return clazzes.toArray(new Class[clazzes.size()]);
     }
 
     /**
@@ -660,9 +677,9 @@ public abstract class ClassUtils {
      * @return a 'particular' (non JDK/OSGi) class if one is found. Else the
      *         first available entry is returned.
      */
-    public static Class getParticularClass(Class[] classes) {
+    public static Class<?> getParticularClass(Class<?>[] classes) {
         for (int i = 0; i < classes.length; i++) {
-            Class clazz = classes[i];
+            Class<?> clazz = classes[i];
             ClassLoader loader = clazz.getClassLoader();
             // quick boot/system check
             if (loader != null) {

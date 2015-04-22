@@ -16,7 +16,6 @@
 
 package org.springframework.osgi.service.importer.support;
 
-import org.springframework.core.enums.StaticLabeledEnum;
 
 /**
  * Enum-like class containing the OSGi importer services cardinality. Indicates
@@ -25,82 +24,104 @@ import org.springframework.core.enums.StaticLabeledEnum;
  * 
  * @author Costin Leau
  */
-public class Cardinality extends StaticLabeledEnum {
+public enum Cardinality {
 
-	private static final long serialVersionUID = 6377096464873348405L;
+    /**
+     * Optional, single cardinality. At most one OSGi service is expected. This
+     * cardinality indicates an OSGi service reference proxy.
+     */
+    C_0__1(0, "0..1"),
 
-	/**
-	 * Optional, single cardinality. At most one OSGi service is expected. This
-	 * cardinality indicates an OSGi service reference proxy.
-	 */
-	public static final Cardinality C_0__1 = new Cardinality(0, "0..1");
+    /**
+     * Optional, multiple cardinality. Zero, one or multiple OSGi services are
+     * expected. This cardinality indicates an OSGi service managed collection.
+     */
+    C_0__N(1, "0..N"),
 
-	/**
-	 * Optional, multiple cardinality. Zero, one or multiple OSGi services are
-	 * expected. This cardinality indicates an OSGi service managed collection.
-	 */
-	public static final Cardinality C_0__N = new Cardinality(1, "0..N");
+    /**
+     * Mandatory, single cardinality. Exactly one OSGi service is expected. This
+     * cardinality indicates an OSGi service reference proxy.
+     */
+    C_1__1(2, "1..1"),
 
-	/**
-	 * Mandatory, single cardinality. Exactly one OSGi service is expected. This
-	 * cardinality indicates an OSGi service reference proxy.
-	 */
-	public static final Cardinality C_1__1 = new Cardinality(2, "1..1");
+    /**
+     * Mandatory, multiple cardinality. At least one OSGi service is expected.
+     * This cardinality indicates an OSGi service managed collection.
+     */
+    C_1__N(3, "1..N");
 
-	/**
-	 * Mandatory, multiple cardinality. At least one OSGi service is expected.
-	 * This cardinality indicates an OSGi service managed collection.
-	 */
-	public static final Cardinality C_1__N = new Cardinality(3, "1..N");
+    /**
+     * Indicates if this cardinality implies that at most one service is
+     * expected.
+     * 
+     * @return true if the given cardinality is single, false otherwise
+     */
+    public boolean isSingle() {
+        return Cardinality.C_0__1.equals(this) || Cardinality.C_1__1.equals(this);
+    }
 
+    /**
+     * Indicates if this cardinality implies that multiple services are
+     * expected.
+     * 
+     * @return true if this cardinality is multiple, false otherwise
+     */
+    public boolean isMultiple() {
+        return Cardinality.C_0__N.equals(this) || Cardinality.C_1__N.equals(this);
+    }
 
-	/**
-	 * Indicates if this cardinality implies that at most one service is
-	 * expected.
-	 * 
-	 * @return true if the given cardinality is single, false otherwise
-	 */
-	public boolean isSingle() {
-		return Cardinality.C_0__1.equals(this) || Cardinality.C_1__1.equals(this);
-	}
+    /**
+     * Indicates if this cardinality implies that at least one service is
+     * expected (mandatory cardinality).
+     * 
+     * @return true if this cardinality is mandatory, false otherwise
+     */
+    public boolean isMandatory() {
+        return Cardinality.C_1__1.equals(this) || Cardinality.C_1__N.equals(this);
+    }
 
-	/**
-	 * Indicates if this cardinality implies that multiple services are
-	 * expected.
-	 * 
-	 * @return true if this cardinality is multiple, false otherwise
-	 */
-	public boolean isMultiple() {
-		return Cardinality.C_0__N.equals(this) || Cardinality.C_1__N.equals(this);
-	}
+    /**
+     * Indicates if this cardinality implies that is acceptable for no matching
+     * services to be found.
+     * 
+     * @return true if this cardinality is optional, false otherwise
+     */
+    public boolean isOptional() {
+        return Cardinality.C_0__N.equals(this) || Cardinality.C_0__1.equals(this);
+    }
 
-	/**
-	 * Indicates if this cardinality implies that at least one service is
-	 * expected (mandatory cardinality).
-	 * 
-	 * @return true if this cardinality is mandatory, false otherwise
-	 */
-	public boolean isMandatory() {
-		return Cardinality.C_1__1.equals(this) || Cardinality.C_1__N.equals(this);
-	}
+    /**
+     * Constructs a new <code>Cardinality</code> instance.
+     * 
+     * @param code
+     * @param label
+     */
+    private Cardinality(int code, String label) {
+        this.code = new Short((short) code);
+        if (label != null) {
+            this.label = label;
+        }
+        else {
+            this.label = this.code.toString();
+        }
+    }
 
-	/**
-	 * Indicates if this cardinality implies that is acceptable for no matching
-	 * services to be found.
-	 * 
-	 * @return true if this cardinality is optional, false otherwise
-	 */
-	public boolean isOptional() {
-		return Cardinality.C_0__N.equals(this) || Cardinality.C_0__1.equals(this);
-	}
+    public Comparable<?> getCode() {
+        return code;
+    }
 
-	/**
-	 * Constructs a new <code>Cardinality</code> instance.
-	 * 
-	 * @param code
-	 * @param label
-	 */
-	private Cardinality(int code, String label) {
-		super(code, label);
-	}
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * The unique code of the enum.
+     */
+    private final Short code;
+
+    /**
+     * A descriptive label for the enum.
+     */
+    private final transient String label;
+
 }

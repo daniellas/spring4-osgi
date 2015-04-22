@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,7 +44,6 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.support.AbstractBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.core.CollectionFactory;
 import org.springframework.osgi.context.BundleContextAware;
 import org.springframework.osgi.service.exporter.OsgiServiceRegistrationListener;
 import org.springframework.osgi.service.exporter.support.AutoExport;
@@ -143,7 +143,7 @@ public class ManagedServiceFactoryFactoryBean implements InitializingBean, BeanC
 	/** read-only view of the registration */
 	private final Collection userReturnedCollection = Collections.unmodifiableCollection(serviceRegistrations);
 	/** lookup map between exporters and associated pids */
-	private final Map serviceExporters = CollectionFactory.createConcurrentMap(8);
+	private final Map<Object, Object> serviceExporters =  new ConcurrentHashMap<Object, Object>(8);
 
 	// exporting template
 	/** listeners */

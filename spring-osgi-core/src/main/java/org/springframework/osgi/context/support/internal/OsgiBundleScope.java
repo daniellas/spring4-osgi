@@ -19,6 +19,7 @@ package org.springframework.osgi.context.support.internal;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -70,7 +71,7 @@ public class OsgiBundleScope implements Scope, DisposableBean {
 		private ServiceFactory decoratedServiceFactory;
 
 		/** destruction callbacks for bean instances */
-		private final Map callbacks = CollectionFactory.createConcurrentMap(4);
+        private final Map<Object,Object> callbacks = new ConcurrentHashMap<Object, Object>(4);
 
 
 		public BundleScopeServiceFactory(ServiceFactory serviceFactory) {

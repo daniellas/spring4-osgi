@@ -25,7 +25,7 @@ import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
-import org.springframework.beans.factory.config.BeanReferenceFactoryBean;
+import org.springframework.beans.factory.config.ObjectFactoryCreatingFactoryBean;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -36,7 +36,6 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.core.Conventions;
-import org.springframework.core.enums.StaticLabeledEnumResolver;
 import org.springframework.osgi.config.internal.adapter.OsgiServiceLifecycleListenerAdapter;
 import org.springframework.osgi.config.internal.util.AttributeCallback;
 import org.springframework.osgi.config.internal.util.ParserUtils;
@@ -210,7 +209,9 @@ abstract class AbstractReferenceDefinitionParser extends AbstractBeanDefinitionP
 
 	private AbstractBeanDefinition createBeanReferenceDefinition(String beanName) {
 		GenericBeanDefinition def = new GenericBeanDefinition();
-		def.setBeanClass(BeanReferenceFactoryBean.class);
+		// FIXME Might not work !!!
+		def.setBeanClass(ObjectFactoryCreatingFactoryBean.class);
+//        def.setBeanClass(BeanReferenceFactoryBean.class);
 		def.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
 		MutablePropertyValues mpv = new MutablePropertyValues();
 		mpv.addPropertyValue(TARGET_BEAN_NAME_PROP, beanName);
@@ -304,8 +305,7 @@ abstract class AbstractReferenceDefinitionParser extends AbstractBeanDefinitionP
 	 * @return
 	 */
 	private Cardinality processCardinalityString(String value) {
-		return (Cardinality) StaticLabeledEnumResolver.instance().getLabeledEnumByLabel(Cardinality.class,
-			value.toUpperCase(Locale.ENGLISH));
+		return Cardinality.valueOf(value.toUpperCase(Locale.ENGLISH));
 	}
 
 	/**
